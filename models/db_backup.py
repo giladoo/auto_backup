@@ -1,6 +1,7 @@
 
 import os
 import datetime
+import pytz
 import time
 import shutil
 import json
@@ -75,7 +76,6 @@ class DbBackup(models.Model):
 
     def test_sftp_connection(self, context=None):
         self.ensure_one()
-
         # Check if there is a success or fail and write messages
         message_title = ""
         message_content = ""
@@ -114,8 +114,21 @@ class DbBackup(models.Model):
             raise Warning(message_title + '\n\n' + message_content)
 
     @api.model
-    def schedule_backup(self):
-        conf_ids = self.search([])
+    def schedule_backup(self, conf_ids=0):
+        active_id = self.env.context.get('active_id')
+        if active_id:
+            conf_ids = self.browse(active_id)
+        elif type(conf_ids) == list and len(conf_ids) != 0:
+            conf_ids = self.search([('id', 'in', conf_ids)])
+        elif type(conf_ids) == int and conf_ids != 0:
+            conf_ids = self.search([('id', '=', conf_ids)])
+        else:
+            conf_ids = self.search([])
+
+        if len(conf_ids) == 0:
+            _logger.debug(f'[schedule_backup] no record for [{conf_ids}]')
+            return
+
         for rec in conf_ids:
 
             try:
@@ -124,7 +137,9 @@ class DbBackup(models.Model):
             except:
                 raise
             # Create name for dumpfile.
-            bkp_file = '%s_%s.%s' % (time.strftime('%Y_%m_%d_%H_%M_%S'), rec.name, rec.backup_type)
+            # bkp_file = '%s_%s.%s' % (time.strftime('%Y_%m_%d_%H_%M_%S'), rec.name, rec.backup_type)
+            date_time = datetime.datetime.now(pytz.timezone(self.env.context.get("tz", "Asia/Tehran")))
+            bkp_file = '%s_%s.%s' % (date_time.strftime('%Y_%m_%d_%H_%M_%S'), rec.name, rec.backup_type)
             file_path = os.path.join(rec.folder, bkp_file)
             try:
                 # try to backup database and write it away

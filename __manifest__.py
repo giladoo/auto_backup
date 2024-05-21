@@ -15,11 +15,12 @@
         2) Search the action 'Backup scheduler'.
         3) Set it active and choose how often you wish to take backups.
         4) If you want to write backups to a remote location you should fill in the SFTP details.
+        
     """,
     'author': "Yenthe Van Ginneken",
     'website': "http://www.odoo.yenthevg.com",
     'category': 'Administration',
-    'version': '15.0.0.1',
+    'version': '15.0.0.2',
     'installable': True,
     'license': 'LGPL-3',
 

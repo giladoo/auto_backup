@@ -5,11 +5,17 @@
         <field name="type">form</field>
         <field name="arch" type="xml">
             <form string="Back-up view">
+                <header>
+                    <button name="schedule_backup" string="Test Backup" type="object" class="btn btn-primary"
+                        context="{'active_id': id}"/>
+                </header>
+
                 <sheet>
                     <group col="4" colspan="4">
                         <separator col="2" string="Local backup configuration"/>
                     </group>
                     <group name="configuration">
+                        <field name="id"/>
                         <field name="host" colspan="2"/>
                         <field name="name"/>
                         <field name="port"/>
@@ -83,6 +89,7 @@
         <field name="type">tree</field>
         <field name="arch" type="xml">
             <tree>
+                <field name='id'/>
                 <field name='host'/>
                 <field name='port'/>
                 <field name='name'/>
