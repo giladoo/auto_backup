@@ -10,6 +10,9 @@ import tempfile
 from odoo import models, fields, api, tools, _
 from odoo.exceptions import UserError, AccessDenied
 import odoo
+from odoo.tools.config import config
+from odoo.tools.which import which
+import subprocess
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -311,7 +314,7 @@ class DbBackup(models.Model):
                     with db.cursor() as cr:
                         json.dump(self._dump_db_manifest(cr), fh, indent=4)
                 cmd.insert(-1, '--file=' + os.path.join(dump_dir, 'dump.sql'))
-                odoo.tools.exec_pg_command(*cmd)
+                self.exec_pg_command(*cmd)
                 if stream:
                     odoo.tools.osutil.zip_dir(dump_dir, stream, include_dir=False, fnct_sort=lambda file_name: file_name != 'dump.sql')
                 else:
@@ -321,7 +324,7 @@ class DbBackup(models.Model):
                     return t
         else:
             cmd.insert(-1, '--format=c')
-            stdin, stdout = odoo.tools.exec_pg_command_pipe(*cmd)
+            stdin, stdout = self.exec_pg_command_pipe(*cmd)
             if stream:
                 shutil.copyfileobj(stdout, stream)
             else:
@@ -341,3 +344,62 @@ class DbBackup(models.Model):
             'modules': modules,
         }
         return manifest
+
+    # TODO: following functions are taken from odoo 17 misc.py in odoo.tools.
+    #  It said that subprocess directly is depricated from odoo 16 on.
+    #  This functions are working as a workaround.
+    #  NOTE: IT IS RECOMMENDED TO FIND AN STABLE SOLUTION AS INSTITUTION
+
+    def find_pg_tool(self, name):
+        path = None
+        if config['pg_path'] and config['pg_path'] != 'None':
+            path = config['pg_path']
+        try:
+            return which(name, path=path)
+        except IOError:
+            raise Exception('Command `%s` not found.' % name)
+
+    def exec_pg_environ(self):
+        """
+        Force the database PostgreSQL environment variables to the database
+        configuration of Odoo.
+
+        Note: On systems where pg_restore/pg_dump require an explicit password
+        (i.e.  on Windows where TCP sockets are used), it is necessary to pass the
+        postgres user password in the PGPASSWORD environment variable or in a
+        special .pgpass file.
+
+        See also http://www.postgresql.org/docs/8.4/static/libpq-envars.html
+        """
+        env = os.environ.copy()
+        if odoo.tools.config['db_host']:
+            env['PGHOST'] = odoo.tools.config['db_host']
+        if odoo.tools.config['db_port']:
+            env['PGPORT'] = str(odoo.tools.config['db_port'])
+        if odoo.tools.config['db_user']:
+            env['PGUSER'] = odoo.tools.config['db_user']
+        if odoo.tools.config['db_password']:
+            env['PGPASSWORD'] = odoo.tools.config['db_password']
+        return env
+
+    def exec_pg_command(self, name, *args):
+        prog = self.find_pg_tool(name)
+        env = self.exec_pg_environ()
+        args2 = (prog,) + args
+        rc = subprocess.call(args2, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        if rc:
+            raise Exception('Postgres subprocess %s error %s' % (args2, rc))
+
+    def exec_pg_command_pipe(self, name, *args):
+        prog = self.find_pg_tool(name)
+        env = self.exec_pg_environ()
+        return self._exec_pipe(prog, args, env)
+
+    def _exec_pipe(self, prog, args, env=None):
+        cmd = (prog,) + args
+        # on win32, passing close_fds=True is not compatible
+        # with redirecting std[in/err/out]
+        close_fds = os.name == "posix"
+        pop = subprocess.Popen(cmd, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=close_fds,
+                               env=env)
+        return pop.stdin, pop.stdout
