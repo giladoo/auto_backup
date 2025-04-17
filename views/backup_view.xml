@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="view_backup_config_form" model="ir.ui.view">
         <field name="name">db.backup.form</field>
@@ -6,57 +7,44 @@
         <field name="arch" type="xml">
             <form string="Back-up view">
                 <header>
-                    <button name="schedule_backup" string="Test Backup" type="object" class="btn btn-primary"
-                        context="{'active_id': id}"/>
+                    <button class="btn btn-primary" context="{'active_id': id}" name="schedule_backup" string="Test Backup" type="object"/>
                 </header>
-
                 <sheet>
                     <group col="4" colspan="4">
                         <separator col="2" string="Local backup configuration"/>
                     </group>
                     <group name="configuration">
                         <field name="id"/>
-                        <field name="host" colspan="2"/>
+                        <field colspan="2" name="host"/>
                         <field name="name"/>
                         <field name="port"/>
                         <field name="backup_type"/>
                         <field name="folder"/>
                         <field name="autoremove"/>
-                        <field name="days_to_keep" attrs="{'invisible': [('autoremove','=',False)]}"/>
+                        <field invisible="autoremove == False" name="days_to_keep"/>
                     </group>
-                    <group name="allow_stfp" col="4" colspan="4">
+                    <group col="4" colspan="4" name="allow_stfp">
                         <separator col="2" string="SFTP"/>
                     </group>
-                    <div style="width:50%;border-radius:10px;margin: 10px 0px;padding:15px 10px 15px 10px;
-                        background-repeat: no-repeat;background-position: 10px center;color: #9F6000;
-                        background-color: #FEEFB3;"
-                         attrs="{'invisible': [('sftp_write','=',False)]}">
-                        <b>Warning:</b>
+                    <div invisible="sftp_write == False" style="width:50%;border-radius:10px;margin: 10px 0px;padding:15px 10px 15px 10px;                         background-repeat: no-repeat;background-position: 10px center;color: #9F6000;                         background-color: #FEEFB3;">
+                        <b>
+                            Warning:
+                        </b>
                         Use SFTP with caution! This writes files to external servers under the path you specify.
                     </div>
                     <group name="sftp_configuration">
                         <field name="sftp_write"/>
-                        <field name="sftp_host"
-                               attrs="{'invisible':[('sftp_write', '=', False)],'required':[('sftp_write', '=', True)]}"/>
-                        <field name="sftp_port"
-                               attrs="{'invisible':[('sftp_write', '=', False)],'required':[('sftp_write', '=', True)]}"/>
-                        <field name="sftp_user"
-                               attrs="{'invisible':[('sftp_write', '=', False)], 'required':[('sftp_write', '=', True)]}"/>
-                        <field name="sftp_password"
-                               attrs="{'invisible':[('sftp_write', '=', False)],'required': [('sftp_write', '=', True)]}"
-                               password="True"/>
-                        <field name="sftp_path"
-                               attrs="{'invisible':[('sftp_write', '==', False)],'required':[('sftp_write', '==', True)]}"
-                               placeholder="For example: /odoo/backups/"/>
-                        <field name="days_to_keep_sftp"
-                               attrs="{'invisible': [('sftp_write', '=', False)], 'required': [('sftp_write', '=', True)]}"/>
-                        <field name="send_mail_sftp_fail" attrs="{'invisible': [('sftp_write','=',False)]}"/>
-                        <field name="email_to_notify"
-                               attrs="{'invisible':['|',('send_mail_sftp_fail', '==', False), ('sftp_write', '=', False)], 'required': [('send_mail_sftp_fail', '=', True)]}"/>
-                        <button name="test_sftp_connection" type="object"
-                                attrs="{'invisible': [('sftp_write','=',False)]}" string="Test SFTP Connection"/>
+                        <field invisible="sftp_write == False" name="sftp_host" required="sftp_write == True"/>
+                        <field invisible="sftp_write == False" name="sftp_port" required="sftp_write == True"/>
+                        <field invisible="sftp_write == False" name="sftp_user" required="sftp_write == True"/>
+                        <field invisible="sftp_write == False" name="sftp_password" password="True" required="sftp_write == True"/>
+                        <field invisible="sftp_write == False" name="sftp_path" placeholder="For example: /odoo/backups/" required="sftp_write == True"/>
+                        <field invisible="sftp_write == False" name="days_to_keep_sftp" required="sftp_write == True"/>
+                        <field invisible="sftp_write == False" name="send_mail_sftp_fail"/>
+                        <field invisible="send_mail_sftp_fail == False or sftp_write == False" name="email_to_notify" required="send_mail_sftp_fail == True"/>
+                        <button invisible="sftp_write == False" name="test_sftp_connection" string="Test SFTP Connection" type="object"/>
                     </group>
-                    <separator string="Help" colspan="2"/>
+                    <separator colspan="2" string="Help"/>
                     <div name="configuration_details">
                         This configures the scheduler for automatic backup of the given database running on given host
                         at given port on regular intervals.
@@ -75,38 +63,35 @@
                         </ol>
                         <p style="font-size:18px;">
                             Need more help?
-                            <a href="https://github.com/Yenthe666/auto_backup/issues">Contact me!</a>
+                            <a href="https://github.com/Yenthe666/auto_backup/issues">
+                                Contact me!
+                            </a>
                         </p>
                     </div>
                 </sheet>
-            </form>
-        </field>
+            </form></field>
     </record>
-
     <record id="view_backup_config_tree" model="ir.ui.view">
         <field name="name">db.backup.tree</field>
         <field name="model">db.backup</field>
         <field name="type">tree</field>
         <field name="arch" type="xml">
             <tree>
-                <field name='id'/>
-                <field name='host'/>
-                <field name='port'/>
-                <field name='name'/>
-                <field name='folder'/>
+                <field name="id"/>
+                <field name="host"/>
+                <field name="port"/>
+                <field name="name"/>
+                <field name="folder"/>
                 <field name="autoremove"/>
                 <field name="sftp_host"/>
-            </tree>
-        </field>
+            </tree></field>
     </record>
-
     <record id="action_backup" model="ir.actions.act_window">
         <field name="name">Configure back-ups</field>
         <field name="res_model">db.backup</field>
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="view_backup_config_tree"/>
     </record>
-
     <menuitem id="auto_backup_menu" name="Back-ups" parent="base.menu_custom"/>
-    <menuitem parent="auto_backup_menu" action="action_backup" id="backup_conf_menu"/>
+    <menuitem action="action_backup" id="backup_conf_menu" parent="auto_backup_menu"/>
 </odoo>
