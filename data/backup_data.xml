@@ -4,9 +4,7 @@
         <record id="backup_scheduler" model="ir.cron">
             <field name="interval_type">days</field>
             <field name="name">Backup scheduler</field>
-            <field name="numbercall">-1</field>
             <field name="priority">5</field>
-            <field name="doall">False</field>
             <field name="active">False</field>
             <field name="interval_number">1</field>
             <field name="model_id" ref="model_db_backup"/>
